@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+    ══════════════════════════════════════════════════════════════════════════
+    Herencia del formulario de Orden de Compra / Solicitud de Cotización
+    Aplica a AMBOS estados porque comparten la misma vista en Odoo 16.
+    ══════════════════════════════════════════════════════════════════════════
+    -->
+    <record id="purchase_order_form_inherit_global_discount" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit.global_discount</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+
+            <!-- 1. Agregar campo Global Discount debajo del bloque de recordatorio -->
+            <xpath expr="//div[@name='reminder']" position="after">
+                <div class="o_td_label">
+                    <label for="global_discount" string="Global Discount (%)"/>
+                </div>
+                <div class="o_field_widget">
+                    <field name="global_discount"
+                           widget="float"
+                           digits="[6,2]"
+                           nolabel="1"/>
+                </div>
+            </xpath>
+
+            <!-- 2. Agregar columna Disc.% en la tabla de líneas de productos -->
+            <xpath expr="//field[@name='order_line']/tree//field[@name='price_unit']" position="after">
+                <field name="discount" optional="show" string="Disc.%"/>
+            </xpath>
+
+            <!-- 3. Ocultar el widget estándar de totales cuando hay descuento -->
+            <xpath expr="//field[@name='amount_untaxed']" position="attributes">
+                <attribute name="invisible">total_discount_amount != 0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='amount_tax']" position="attributes">
+                <attribute name="invisible">total_discount_amount != 0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='amount_total']" position="attributes">
+                <attribute name="invisible">total_discount_amount != 0</attribute>
+            </xpath>
+
+            <!-- 4. Insertar bloque de totales con descuento desglosado -->
+            <xpath expr="//field[@name='amount_total']" position="after">
+                <!-- Subtotal bruto -->
+                <group col="2"
+                       invisible="total_discount_amount == 0"
+                       class="oe_subtotal_footer">
+                    <field name="total_amount_untaxed"
+                           string="Untaxed Amount"
+                           widget="monetary"
+                           options="{'currency_field': 'currency_id'}"
+                           nolabel="0"/>
+                    <!-- Descuento (negativo) -->
+                    <field name="total_discount_amount_display"
+                           string="Discount"
+                           widget="monetary"
+                           options="{'currency_field': 'currency_id'}"
+                           nolabel="0"/>
+                    <!-- Monto descontado (=amount_untaxed) -->
+                    <field name="amount_untaxed"
+                           string="Discounted Amount"
+                           widget="monetary"
+                           options="{'currency_field': 'currency_id'}"
+                           nolabel="0"/>
+                    <!-- Impuesto -->
+                    <field name="amount_tax"
+                           string="Taxes"
+                           widget="monetary"
+                           options="{'currency_field': 'currency_id'}"
+                           nolabel="0"/>
+                    <!-- Total final -->
+                    <field name="amount_total"
+                           string="Total"
+                           widget="monetary"
+                           options="{'currency_field': 'currency_id'}"
+                           nolabel="0"
+                           style="font-weight: bold; font-size: 1.1em;"/>
+                </group>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

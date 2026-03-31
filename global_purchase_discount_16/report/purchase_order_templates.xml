@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+    ══════════════════════════════════════════════════════════════════════════
+    Herencia del reporte PDF de Orden de Compra
+    Odoo 16: inherit_id = purchase.report_purchaseorder_document
+    ══════════════════════════════════════════════════════════════════════════
+    -->
+    <template id="report_purchaseorder_document_inherit_global_discount"
+              inherit_id="purchase.report_purchaseorder_document">
+
+        <!--
+        ── Paso 1: ocultar el bloque de totales estándar cuando hay descuento ──
+        En Odoo 16 el bloque de totales es un <div id="total"> igual que en v18.
+        -->
+        <xpath expr="//div[@id='total']" position="attributes">
+            <attribute name="t-if">o.total_discount_amount == 0</attribute>
+        </xpath>
+
+        <!--
+        ── Paso 2: insertar bloque alternativo con totales desglosados ──────────
+        Se muestra SOLO cuando hay descuento global aplicado.
+        Estructura compatible con el tema de reportes de Odoo 16 Community.
+        -->
+        <xpath expr="//div[@id='total']" position="after">
+            <div t-if="o.total_discount_amount != 0"
+                 class="row justify-content-end"
+                 id="total_with_discount">
+                <div class="col-4">
+                    <table class="table table-sm table-borderless">
+
+                        <!-- Subtotal bruto (sin descuento) -->
+                        <tr>
+                            <td>
+                                <strong>Untaxed Amount</strong>
+                            </td>
+                            <td class="text-end">
+                                <span t-field="o.total_amount_untaxed"/>
+                            </td>
+                        </tr>
+
+                        <!-- Importe del descuento (negativo) -->
+                        <tr>
+                            <td>
+                                <strong>Discount</strong>
+                            </td>
+                            <td class="text-end">
+                                <span t-field="o.total_discount_amount_display"/>
+                            </td>
+                        </tr>
+
+                        <!-- Subtotal después de descuento (= amount_untaxed) -->
+                        <tr>
+                            <td>
+                                <strong>Discounted Amount</strong>
+                            </td>
+                            <td class="text-end">
+                                <span t-field="o.amount_untaxed"/>
+                            </td>
+                        </tr>
+
+                        <!--
+                        Impuestos: en Odoo 16 tax_totals es un dict con la clave
+                        'subtotals' que contiene lista de grupos de impuesto.
+                        Iteramos para mostrar cada grupo de impuesto.
+                        -->
+                        <t t-if="o.tax_totals and o.tax_totals.get('subtotals')">
+                            <t t-foreach="o.tax_totals['subtotals']" t-as="subtotal">
+                                <t t-if="subtotal.get('tax_groups')"
+                                   t-foreach="subtotal['tax_groups']" t-as="tax_group">
+                                    <tr>
+                                        <td>
+                                            <span t-esc="tax_group.get('group_name', '')"/>
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-out="tax_group.get('tax_amount_currency', 0)"
+                                                  t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                        </td>
+                                    </tr>
+                                </t>
+                                <!--
+                                Fallback: si no hay tax_groups individuales,
+                                mostramos el amount del subtotal directamente.
+                                -->
+                                <t t-if="not subtotal.get('tax_groups')">
+                                    <tr>
+                                        <td>
+                                            <span t-esc="subtotal.get('name', 'Taxes')"/>
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-out="subtotal.get('amount', 0)"
+                                                  t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </t>
+                        </t>
+
+                        <!--
+                        Si tax_totals no está disponible o está vacío,
+                        mostramos amount_tax directamente como fallback.
+                        -->
+                        <t t-if="not o.tax_totals or not o.tax_totals.get('subtotals')">
+                            <tr>
+                                <td>
+                                    <span>Taxes</span>
+                                </td>
+                                <td class="text-end">
+                                    <span t-field="o.amount_tax"/>
+                                </td>
+                            </tr>
+                        </t>
+
+                        <!-- Total final -->
+                        <tr class="o_subtotal">
+                            <td>
+                                <strong>Total</strong>
+                            </td>
+                            <td class="text-end">
+                                <span t-field="o.amount_total"/>
+                            </td>
+                        </tr>
+
+                    </table>
+                </div>
+            </div>
+        </xpath>
+
+        <!--
+        ── Paso 3: agregar columna Disc.% en la tabla de líneas del reporte ────
+        En el template original de Odoo 16 la cabecera de columnas está en un <tr>
+        dentro de <thead>. Insertamos la columna Disc. entre Price y Taxes.
+        -->
+        <xpath expr="//th[@name='th_taxes']" position="before">
+            <th name="th_disc" class="text-end">
+                <span>Disc.</span>
+            </th>
+        </xpath>
+
+        <!--
+        Celda de datos de la columna Disc. por línea.
+        En Odoo 16 el template usa <td> con t-field directamente.
+        -->
+        <xpath expr="//td[@name='td_taxes']" position="before">
+            <td name="td_disc" class="text-end">
+                <span t-if="line.discount"
+                      t-esc="'%.2f%%' % line.discount"/>
+                <span t-if="not line.discount">-</span>
+            </td>
+        </xpath>
+
+    </template>
+</odoo>
