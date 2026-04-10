@@ -1,0 +1,17 @@
+<odoo>
+    <template id="purchase_order_report_pro"
+              inherit_id="purchase.report_purchaseorder_document">
+
+        <xpath expr="//div[@class='page']" position="inside">
+            <p>
+                <strong>Tipo:</strong>
+                <span t-esc="o.discount_type"/>
+            </p>
+            <p>
+                <strong>Descuento:</strong>
+                <span t-esc="o.discount_amount"/>
+            </p>
+        </xpath>
+
+    </template>
+</odoo>

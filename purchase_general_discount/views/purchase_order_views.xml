@@ -1,0 +1,20 @@
+<odoo>
+    <record id="view_purchase_order_discount_pro" model="ir.ui.view">
+        <field name="name">purchase.order.discount.pro</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='date_planned']" position="after">
+                <field name="discount_type"/>
+                <field name="discount_scope"/>
+                <field name="general_discount"/>
+            </xpath>
+
+            <xpath expr="//field[@name='amount_total']" position="before">
+                <field name="discount_amount" readonly="1"/>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

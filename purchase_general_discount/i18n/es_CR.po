@@ -1,0 +1,8 @@
+msgid "Tipo de Descuento"
+msgstr "Tipo de Descuento"
+
+msgid "Descuento"
+msgstr "Descuento"
+
+msgid "Monto Descuento"
+msgstr "Monto Descuento"
